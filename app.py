@@ -7,7 +7,6 @@ from sklearn.ensemble import RandomForestClassifier
 import plotly.graph_objects as go
 
 fred = Fred(api_key=st.secrets["FRED_API_KEY"])
-st.write(f"Key length: {len(st.secrets['FRED_API_KEY'])}")
 
 st.title("美股宏观驱动板块轮动模型")
 st.markdown("基于美联储利率、CPI、失业率、消费者信心预测下月最强板块")
