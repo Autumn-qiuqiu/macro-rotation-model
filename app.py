@@ -81,3 +81,40 @@ fig = go.Figure(go.Bar(
 ))
 fig.update_layout(title="各板块跑赢概率", yaxis_title="概率", height=400)
 st.plotly_chart(fig)
+
+st.subheader("回测表现")
+
+split = int(len(feature_data) * 0.8)
+X_train = feature_data.iloc[:split]
+X_test = feature_data.iloc[split:]
+best_sector = "XLI"
+
+y_train = (combined[best_sector].shift(-1) > combined[best_sector].mean()).astype(int).loc[X_train.index].dropna()
+X_train = X_train.loc[y_train.index]
+
+model_bt = RandomForestClassifier(n_estimators=100, random_state=42, class_weight='balanced')
+model_bt.fit(X_train, y_train)
+
+proba_bt = model_bt.predict_proba(X_test)[:, 1]
+print(f"概率范围: {proba_bt.min():.3f} - {proba_bt.max():.3f}")
+threshold = float(pd.Series(proba_bt).quantile(0.6))
+pred_bt = pd.Series((proba_bt > threshold).astype(int), index=X_test.index)
+test_returns = combined[best_sector].loc[X_test.index]
+
+strategy_returns = test_returns * pred_bt
+cum_strategy = (1 + strategy_returns).cumprod()
+cum_buyhold = (1 + test_returns).cumprod()
+
+active = strategy_returns[pred_bt == 1]
+sharpe = active.mean() / active.std() * (12**0.5) if len(active) > 1 else 0
+
+fig2 = go.Figure()
+fig2.add_trace(go.Scatter(x=cum_strategy.index, y=cum_strategy.values, name="宏观轮动策略", line=dict(color="green", width=2)))
+fig2.add_trace(go.Scatter(x=cum_buyhold.index, y=cum_buyhold.values, name="买入持有XLI", line=dict(color="blue", width=2)))
+fig2.update_layout(title="累计收益对比（样本外测试）", height=400)
+st.plotly_chart(fig2)
+
+col1, col2, col3 = st.columns(3)
+col1.metric("Sharpe Ratio", f"{sharpe:.2f}")
+col2.metric("策略累计收益", f"{cum_strategy.iloc[-1]:.2f}x")
+col3.metric("持仓月数", f"{pred_bt.sum()} / {len(pred_bt)}")
