@@ -1,6 +1,7 @@
 # US Macro-Driven Sector Rotation Model
 A machine learning model that predicts which S&P 500 sector will 
 outperform the market based on macroeconomic indicators.
+
 **Live Demo:** https://macro-rotation-model-jkcgrsjbc5v6xf6k2t9iv5.streamlit.app/
 
 ## What it does
